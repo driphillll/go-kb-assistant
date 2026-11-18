@@ -45,7 +45,10 @@ copy .env.example .env
 
 ## 当前进度
 
-- [x] Step 1：模型 API 调用 + 流式输出
-- [ ] Step 2：工具调用
+- [x] Step 1：模型 API 调用 + 流式输出（`step1_hello_llm.py`）
+- [x] Step 2：工具调用 + 最小可运行 Agent（`step2_tool_agent.py`）
+  - 三件套：工具（`get_go_doc` / `list_symbols`）+ 规划（工具调用循环）+ 记忆（`messages` 历史）
+  - 内置 Go 符号文档作为数据源，Step 3 将替换为真正的 RAG 检索
+  - 含 Prompt 对比实验（`prompt_experiment`，弱提示 vs 强提示的工具调用率）
 - [ ] Step 3：RAG 全链路
 - [ ] Step 4：多智能体 + 部署
