@@ -3,5 +3,6 @@
 .venv/
 __pycache__/
 *.pyc
+rag_index.json
 .DS_Store
 .idea/

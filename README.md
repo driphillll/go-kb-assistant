@@ -50,5 +50,11 @@ copy .env.example .env
   - 三件套：工具（`get_go_doc` / `list_symbols`）+ 规划（工具调用循环）+ 记忆（`messages` 历史）
   - 内置 Go 符号文档作为数据源，Step 3 将替换为真正的 RAG 检索
   - 含 Prompt 对比实验（`prompt_experiment`，弱提示 vs 强提示的工具调用率）
-- [ ] Step 3：RAG 全链路
+- [x] Step 3：RAG 检索基础版（`rag_core.py` + `step3_rag_agent.py`）
+  - `corpus/go_kb.md`：7 个主题的结构化 Go 知识语料（含 Step2 字典里没有的 context / GMP，证明语义检索强于硬编码查表）
+  - `rag_core.py`：切分（按标题）→ embedding（Ollama nomic-embed-text）→ JSON 索引 → 余弦相似度检索，指纹变化才重建
+  - `step3_rag_agent.py`：**复用 Step2 主循环一字未改，只把 `get_go_doc` 内部从字典查表换成语义检索**；答案强制带来源
+  - 端到端实测：模型自主规划 2 轮检索（同步机制 + 两者区别），答案基于片段并标注来源
+  - 前置：`ollama pull nomic-embed-text`；`EMBED_MODEL` / `STEP3_MODEL` 可用环境变量覆盖
+  - 待进阶：真实 Go 源码切分（按 package/函数）、ChromaDB/FAISS 向量库、rerank 重排序、RAGAS 评测
 - [ ] Step 4：多智能体 + 部署

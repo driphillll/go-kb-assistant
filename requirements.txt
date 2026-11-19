@@ -1,2 +1,5 @@
 openai>=1.40.0
 python-dotenv>=1.0.0
+# Step3 RAG 目前用纯 Python 余弦相似度 + JSON 索引，无额外必装依赖。
+# 若后续要换成 ChromaDB / FAISS 向量库，再取消下面这行注释：
+# chromadb>=0.5.0
