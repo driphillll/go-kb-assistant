@@ -156,4 +156,4 @@ if __name__ == "__main__":
     demo = positional[0] if positional else "channel 是怎么做同步的？"
     print("\n[示例检索] 问题：", demo)
     print("\n[返回给模型的参考资料]\n")
-    print(rag_search(demo, index=idx))
+    print(rag_search(demo, top_k=5, index=idx))
