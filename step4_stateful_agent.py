@@ -168,6 +168,7 @@ def confirm_tool_calls(tool_calls: list) -> list | None:
 # 第三部分：状态机主循环 —— PLAN -> CONFIRM -> EXECUTE -> OBSERVE -> 回到 PLAN
 # ============================================================
 def run_agent(question: str, system_prompt: str = SYSTEM_PROMPT) -> str:
+    ## 包装整个消息体数组
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": question},
@@ -176,16 +177,21 @@ def run_agent(question: str, system_prompt: str = SYSTEM_PROMPT) -> str:
     print(f"[模型] {STEP4_MODEL}")
     print(f"[问题] {question}\n")
 
+    ## 从1循环到8，可是下标是从1到8，不是从0~7
     for step in range(1, MAX_STEPS + 1):
         # ---------- 状态：PLAN ----------
         print(f"  --- 第 {step} 轮 · [PLAN 模型规划] ---")
         response = client.chat.completions.create(
             model=STEP4_MODEL,
             messages=messages,
+            ## 这里的TOOLS是和TOOL_IMPL结合起来看的,TOOLS是给模型看的，告诉模型自己有多少个TOOLS，可实际回来的话应该是用的TOOL_IMPL的工具
             tools=TOOLS,
+            ## tool_choice 三档："auto"（模型自己决定，当前）、"none"（禁用工具，纯文本作答）、"required"（必须至少调一个）
             tool_choice="auto",
+            ## 是关掉思考
             extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
+        ## 回复
         msg = response.choices[0].message
 
         # 把 assistant 消息转成普通 dict，方便在中断点编辑参数
@@ -194,6 +200,7 @@ def run_agent(question: str, system_prompt: str = SYSTEM_PROMPT) -> str:
             "content": msg.content,
         }
         raw_calls = []
+        ## 如果模型返回需要调用工具，则把回复里把需要调用的工具信息填入
         if msg.tool_calls:
             for call in msg.tool_calls:
                 raw_calls.append({
@@ -205,6 +212,7 @@ def run_agent(question: str, system_prompt: str = SYSTEM_PROMPT) -> str:
                     },
                 })
             assistant_msg["tool_calls"] = raw_calls
+        ## 整个回给模型的消息体重增加工具调用的信息和参数
         messages.append(assistant_msg)
 
         # ---------- 无工具调用 -> ANSWER ----------
@@ -228,7 +236,9 @@ def run_agent(question: str, system_prompt: str = SYSTEM_PROMPT) -> str:
                 name = call["function"]["name"]
                 args = json.loads(call["function"]["arguments"] or "{}")
                 print(f"      [模型决策] {name} {args}")
+                ## 这里是用户确认后，实际调用本地工具给result
                 result = TOOL_IMPL[name](**args)
+            ## 然后根据上面的判断，直接把结果返回给消息体，然后喂给模型F
             messages.append({
                 "role": "tool",
                 "tool_call_id": call["id"],
@@ -240,5 +250,6 @@ def run_agent(question: str, system_prompt: str = SYSTEM_PROMPT) -> str:
 
 
 if __name__ == "__main__":
+    ## 这句是不是语法反制？就是if sys.argv的参数长度>1 就取sys.argv[1]  反之则用默认写死的问题？
     question = sys.argv[1] if len(sys.argv) > 1 else "channel 是怎么做同步的？和 goroutine 有什么区别？"
     run_agent(question)
